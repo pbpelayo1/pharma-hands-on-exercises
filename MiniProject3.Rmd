@@ -59,7 +59,7 @@ library(rio)
 2.   Read in the CDISC adsl data from the GitHub location (`https://github.com/phuse-org/phuse-scripts/raw/master/data/adam/cdisc/adsl.xpt`) and assign this to an object in R using the assignment operator `<-`. Make sure that the URL location is a character string by enclosing it in `" "`. The `rio` package has a function called `import` that reads data into R and infers the data type from the file name. The first argument of that function is `file`. Paste the file path / URL above after the `file=` argument in the code below, then run the chunk using the green arrow.
 
 ```{r read_adsl}
-adsl <- import( file = ""  )
+adsl <- import( file = "https://github.com/phuse-org/phuse-scripts/raw/master/data/adam/cdisc/adsl.xpt"  )
 adsl
 ```
 
@@ -67,7 +67,7 @@ Next filter the adsl dataset where the EFFFL variable has the value "Y" (as we d
 
 ```{r create_adsl_eff}
 adsl_eff <- adsl %>%
-  filter(  ) %>%
+  filter(EFFFL=="Y"  ) %>%
   mutate(SEX = recode(SEX, "M" = "Male", "F" = "Female")) 
 ```
 
@@ -85,7 +85,7 @@ The {dplyr} package has a function called `summarize()` that will calculate vari
 
 ```{r}
 adsl_eff %>%
-  group_by(  ) %>% 
+  group_by(TRT01AN, TRT01A, SEX) %>% 
   summarize(mean =(mean(AGE)))
 ```
 
@@ -95,8 +95,8 @@ Notice that there are 5 decimal places outputted in the mean values. We do not o
 adsl_eff %>%
   group_by( TRT01A, TRT01AN, SEX ) %>%
   summarize(mean = (mean( AGE ) %>% 
-                      round(digits =  ) %>%
-                      format(nsmall =  ))
+                      round(digits =  1) %>%
+                      format(nsmall = 1 ))
   )
 ```
 
@@ -107,12 +107,13 @@ Using the above information, finish the code below by creating a data frame name
 ```{r}
 age_stat<- adsl_eff %>%
   group_by(TRT01AN,TRT01A,SEX) %>%
-  summarize(mean = (mean( ) %>% round(digits = 1) %>% format(nsmall=1))  ,
-            sd = (sd( ) %>% round(digits = 1) %>% format(nsmall = 1)), 
-            med = median( )  ,              
-            min = min( ), 
-            max = max( ),
-            n = n())
+  summarize(mean = (mean(AGE ) %>% round(digits = 1) %>% format(nsmall = 1))  ,
+            sd = (sd(AGE) %>% round(digits = 1) %>% format(nsmall = 1)), 
+            med = median(AGE)%>% format(),              
+            min = min(AGE)%>% format(), 
+            max = max(AGE)%>% format(),
+            n = n() %>% format()
+)
 
 age_stat
 ```
@@ -128,7 +129,7 @@ Notice that there is a space between the first parentheses and the first digit. 
 
 ```{r}
 age_stat2<-age_stat %>%
-  mutate(range_minmax= paste("(",min, ",", max, ")"))
+  mutate(range_minmax= paste0("(",min, ",", max, ")"))
 
 age_stat2
 
@@ -211,16 +212,15 @@ If you need to copy and paste code 3 times or more it's time to write a function
 You can quickly convert from code like this:
 
 ```{r}
-age_stat<- adsl_eff %>%
-  group_by(TRT01AN,TRT01A,SEX) %>%
-  summarize(mean = mean( ) %>% round(digits = 1) %>% format(nsmall=1)  ,
-            sd = sd( ) %>% round(digits = 1) %>% format(nsmall = 1), 
-            med = median( )  ,              
-            min = min( ), 
-            max = max( ),
-            n = n())
+#age_stat<- adsl_eff %>%
+ # group_by(TRT01AN,TRT01A,SEX) %>%
+  #summarize(mean = mean( ) %>% round(digits = 1) %>% format(nsmall=1)  ,
+   #         sd = sd( ) %>% round(digits = 1) %>% format(nsmall = 1), 
+    #        med = median( )  ,              
+     ##      max = max( ),
+       #     n = n())
 
-age_stat
+#age_stat
 ```
 
 To a function like this:
@@ -254,8 +254,8 @@ varSummary <- function(.data, variable) {
               n = n())
 }
 
-adsl_saf %>%
-  varSummary(AGE)
+#adsl_eff %>%
+ # varSummary(AGE)
 ```
 
 The problem here is that R is looking for an object called AGE, which doesn't exist in the current Environment. Instead we need to tell R that the "AGE" argument that we pass should be interpreted within the scope of the data, rather than looking in the Environment. The secret is to enclose or "embrace" the variable in double quotes within the function. It's a bit like using a Macro variable in SAS.
@@ -264,14 +264,31 @@ The problem here is that R is looking for an object called AGE, which doesn't ex
 varSummary <- function(.data = NULL, variable = NULL) {
   .data %>%
     group_by(TRT01AN,TRT01A,SEX) %>%
-    summarize(mean = mean({{variable}}) %>% round(digits = 1) %>% format(nsmall=1)  ,
-              sd = sd({{variable}}) %>% round(digits = 1) %>% format(nsmall = 1), 
-              med = median({{variable}})  ,              
-              min = min({{variable}}), 
-              max = max({{variable}}),
-              n = n())
+    summarize(mean = mean({{variable}}, na.rm = TRUE) %>% round(digits = 1) %>% format(nsmall=1)  ,
+              sd = sd({{variable}}, na.rm = TRUE) %>% round(digits = 1) %>% format(nsmall = 1), 
+              med = median({{variable}}, na.rm = TRUE)  ,              
+              min = min({{variable}} , na.rm = TRUE), 
+              max = max({{variable}}, na.rm = TRUE),
+              n = n())%>%
+              mutate(range_minmax= paste0("(",min, ",", max, ")"))%>%
+              ungroup()%>%
+              select("TRT01A","SEX", "n", "mean", "med", "sd", "range_minmax") %>% 
+              mutate(across(where(is.numeric), .fns = as.character)) %>%
+              pivot_longer(-c("TRT01A","SEX"), names_to ="category", values_to = "values" )%>%
+              pivot_wider(names_from = c(TRT01A, SEX), values_from = values) %>%
+              mutate(category = case_when(category == "n" ~ "N",
+                              category == "med" ~ "Median", 
+                              category == "mean" ~ "Mean", 
+                              category == "sd" ~ "Std Dev", 
+                              category == "range_minmax" ~ "Range(min,max)"))
 }
 
-adsl_saf %>%
-  varSummary(AGE)
+weight_stat<-adsl_eff %>%
+  varSummary(WEIGHTBL)
+height_stat<-adsl_eff %>%
+  varSummary(HEIGHTBL)
+
+weight_stat
+height_stat
+
 ```
