@@ -226,6 +226,65 @@ dm_allcomb
 
 2.  Move N before Age- categories.
 
+```{r}
+dm_allcomb2 <- rbind( dm_allcomb[4,], dm_allcomb[1:3, ], dm_allcomb[5:8, ] )
+dm_allcomb2
+```
+
+
+
+
 3.  Add Ethnicity and Race.
+```{r}
+adsl_eff$ETHNIC <- str_to_title(adsl_eff$ETHNIC)
+adsl_eff$RACE   <- str_to_title(adsl_eff$RACE)
+
+cat_pct <- function(var=NULL){
+  
+  adsl_eff %>% 
+    group_by(TRT01AN, TRT01A, SEX) %>%
+    count(name = "n") %>%
+    ungroup() %>%
+    complete(nesting(TRT01AN, TRT01A), SEX, fill = list(n=0))
+  
+  N_cnt <- adsl_eff %>%
+    group_by(TRT01AN, TRT01A, SEX) %>%
+    count(name = "cat_total")
+  
+  n_cnt <- adsl_eff %>%
+    group_by(TRT01AN, TRT01A, SEX, {{var}}) %>%
+    count(name = "cat_n")
+  
+  mrg_cnt <- n_cnt %>% 
+    left_join(N_cnt, 
+              by = c("TRT01AN", "TRT01A", "SEX"))
+
+  mrg_cnt <- ungroup(mrg_cnt)
+  
+  n_pct <- mrg_cnt %>%                 
+    mutate(perc_cat = round((cat_n/cat_total)*100,1)) %>%
+    mutate(perc_achar = format(perc_cat, nsmall = 1)) %>%
+    mutate(npct = paste(cat_n, paste0("(", perc_achar, ")"))) %>% 
+    select({{var}}, TRT01A, SEX, npct)
+  
+  trans <- pivot_wider(n_pct, 
+                       names_from = c(TRT01A,SEX), 
+                       values_from = npct, 
+                       values_fill = "0",
+                       names_sep = "_")
+  
+  cat <- rename(trans, category={{var}})
+  cat %>%
+    arrange(category)
+  
+}
+
+ethnicity <- cat_pct(ETHNIC)
+ethnicity
+
+race <- cat_pct(RACE)
+race
+```
+
 
 Save the .RMD file on your desktop and click on the "Knit" button at the top of the file to render an HTML version of this document.
