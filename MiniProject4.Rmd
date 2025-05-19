@@ -169,7 +169,7 @@ myData <- myData %>%
 myData %>%
   arrange(age)
 ```
-
+ 
 ------------------------------------------------------------------------
 
 6.  Generating Summary Statistics (Project 3)
