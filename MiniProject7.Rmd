@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(haven)
+library(rio)
+library(glue)
 ```
 
 ## 1. Introduction
@@ -32,7 +34,7 @@ adsl_saf <- import("https://github.com/phuse-org/phuse-scripts/raw/master/data/a
     group_by( TRT01AN, TRT01A,  SEX ) %>%
     count(name = "n")
   small_n_cnt
-  
+   
   adsl_mrg_cnt <- small_n_cnt %>%
     left_join(Big_N_cnt, by = c("TRT01A", "TRT01AN")) %>%
     mutate(perc = round((n/N)*100, digits=1)) %>%
@@ -151,7 +153,7 @@ Use the RStudio IDE `fun` snippet to create a function called "adsl_counts" base
 ```{r}
 
 adsl_counts <- function(dataFile){
- adsl_saf <- read_xpt(  ) %>%
+ adsl_saf <- read_xpt(dataFile) %>%
     filter(SAFFL == "Y")
   
   Big_N_cnt <-  adsl_saf %>%
@@ -268,15 +270,15 @@ Amend the function code below to instead calculate based on an input dataset, li
 
 ```{r}
 adsl_counts <- function(adsl_FilePath) {
-  adsl_saf <- read_xpt(   ) %>%
-    filter(SAFFL == "Y")
+ # adsl_saf <- read_xpt( adsl_FilePath ) %>%
+   # filter(SAFFL == "Y")
   
-  Big_N_cnt <-  adsl_saf   %>%
+  Big_N_cnt <- adsl_FilePath   %>%
     group_by( TRT01AN, TRT01A  ) %>%
     count(name = "N")
   Big_N_cnt
   
-  small_n_cnt <-  adsl_saf  %>%
+  small_n_cnt <-  adsl_FilePath  %>%
     group_by( TRT01AN, TRT01A,  SEX ) %>%
     count(name = "n")
   small_n_cnt
@@ -338,3 +340,49 @@ In the code above we are allowing the user to pass the `digits` argument through
 ## Challenge
 
 Convert the code you wrote in the Mini Project 6 challenge into a function that takes an input `adlb` dataset and produces the graph. For an additional challenge, allow the user to specify the axes labels.
+
+```{r}
+library(ggdist)
+library(cowplot)
+
+graph <- function (filepath, x_labs, y_labs){
+  ALT <- read_xpt(filepath) %>%
+    filter(PARAMCD=="ALT")
+
+  ALT2 <- ALT %>%
+      filter(VISITNUM >3) %>%
+      mutate(WEEK= floor(ADY/7))
+  
+  TREATfac <- ALT2 %>%
+      select(TRTA, TRTAN) %>%
+      unique() %>%
+      arrange(TRTAN) %>%
+      mutate(TREATMENT = factor (TRTA, ordered=TRUE))
+  
+  ALT2 <- ALT2 %>%
+      mutate(TREATTXT = factor(TRTP,levels=TREATfac$TRTA))
+  
+  ALT3 <- ALT2 %>%
+    filter(WEEK %in% c(2, 4, 6, 8, 16, 24, 26)) %>%
+    filter(LBNRIND %in% c("HIGH", "LOW"))
+
+
+  plot4 <- 
+    ALT2 %>%
+    filter(WEEK %in% c(2, 4, 6, 8, 16, 24, 26)) %>%
+    ggplot(mapping = aes(x = LBSTRESN, y = as.factor(WEEK))) +
+    coord_cartesian(xlim=c(0, 125)) +
+    stat_dotsinterval(slab_alpha = 0) +
+    geom_point(data = ALT3, aes(color = "red")) + 
+    labs(x = x_labs,
+         y = y_labs)
+  
+  ggdraw(plot4) +
+    draw_label("DRAFT", color="grey", alpha = 0.3, size = 75, angle=45)
+  
+}
+
+
+graph("https://github.com/phuse-org/phuse-scripts/raw/master/data/adam/cdisc/adlbc.xpt", "Alanine Aminotransferase U/L", "Week")
+```
+
