@@ -16,17 +16,17 @@ To insert a snippet, in your R script or RMarkdown file, start typing in the nam
 
 
 ```{r function1}
-name < - function (variables){
+#name < - function (variables){
   
-}
+#}
 ```
 
 If you select the snippet from the completion list, it will be inserted along with several text placeholders which you can fill in by typing and then pressing Tab to advance to the next placeholder:
 
 ```{r function2}
-name <- function(variables) {
+#name <- function(variables) {
   
-}
+#}
 ```
 
 Snippets are a great way to automate the insertion of commonly used code, and are available for R, C/C++, JavaScript, and several other languages.
