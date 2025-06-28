@@ -1,7 +1,7 @@
 ---
 title: "Mini-project 6 - {ggplot2} extensions"
-author: "Mike K Smith"
-date: "2/21/2023"
+author: "Princess Pelayo"
+date: "2025-06-28"
 output: html_document
 ---
 
