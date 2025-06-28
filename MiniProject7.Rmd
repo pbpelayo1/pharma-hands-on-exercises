@@ -1,7 +1,7 @@
 ---
 title: "Mini-project 7 - Getting started writing functions"
-author: "Mike K Smith"
-date: "3/2/2023"
+author: "Princess Pelayo"
+date: "2025-06-28"
 output: html_document
 ---
 
@@ -368,7 +368,6 @@ graph <- function (filepath, x_labs, y_labs){
 
 
   plot4 <- 
-    ALT2 %>%
     filter(WEEK %in% c(2, 4, 6, 8, 16, 24, 26)) %>%
     ggplot(mapping = aes(x = LBSTRESN, y = as.factor(WEEK))) +
     coord_cartesian(xlim=c(0, 125)) +
