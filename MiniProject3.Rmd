@@ -1,7 +1,7 @@
 ---
 title: "Mini-project 3 - Generating grouped summary statistics"
-author: "Mike K Smith"
-date: "02/14/2023"
+author: "Princess Pelayo"
+date: "2025-06-28"
 output: html_document
 ---
 
@@ -283,7 +283,7 @@ varSummary <- function(.data = NULL, variable = NULL) {
                               category == "range_minmax" ~ "Range(min,max)"))
 }
 
-weight_stat<-adsl_eff %>%
+weight_stat<-adsl_eff %>% 
   varSummary(WEIGHTBL)
 height_stat<-adsl_eff %>%
   varSummary(HEIGHTBL)
