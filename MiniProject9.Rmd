@@ -1,7 +1,7 @@
 ---
 title: "Mini-project 9 - Reproducible examples and {reprex}"
-author: "Leanne Vicente"
-date: "3/8/2023"
+author: "Princess Pelayo"
+date: "9/16/25"
 output: html_document
 ---
 
@@ -10,6 +10,8 @@ output: html_document
 library(reprex)
 library(tidyverse)
 library(rio)
+library(knitr)
+library(xfun)
 ```
 
 Reprex stands for reproducible example! This is a new package for this series of Mini Projects. (It can also be one of the many packages that are installed when you install tidyverse, you can check and see if you already have it installed by looking at your Packages tab) reprex is a convenience wrapper that uses the 'rmarkdown' package to render small snippets of code to target formats that include both code and output. The goal is to encourage the sharing of small, reproducible, and runnable examples. When somebody helps debug your code, it helps if they don't need to work hard to reformat code, strip out results and command prompts, and not have to guess what packages you've loaded. This is great for re-producing code, or de-bugging in a group of colleagues. Reprex packages your code, output, and information about your problem so that others can easily run it and help fix the error. \*\*\* Do this instead of taking a screenshot of your R session! \*\*\* If you send a screenshot of your error, then anyone helping you cannot directly re-run your code, has to re-type your code (and inevitably there will be typos and mistakes in the transcription). It's HORRIBLY inefficient...
@@ -351,3 +353,37 @@ ggplot(data = BICARB,
        mapping = aes(x = ADY, y = AVAL)) +
   geom_point(aes(colour = "THERAPY1"))
 ```
+```{r}
+library(tidyverse)
+library(rio)
+
+adlb <- import("https://github.com/phuse-org/phuse-scripts/raw/master/data/adam/cdisc/adlbh.xpt")
+
+BICARB <- adlb %>%  
+    filter(SAFFL == "Y") %>% 
+    filter(PARAMCD == "BASO")
+
+#creating a minimal dataset for reprex
+rows <- sample(1:nrow(BICARB), size = 5, replace = FALSE)
+BICARB2 <- BICARB %>% select(ADY, AVAL) %>% slice(rows)
+
+
+#codes for reprex
+library(tidyverse)
+
+BICARB_sample <- tribble(
+  ~ADY, ~AVAL,
+  114, 0.04,
+  188, 0.03,
+  174, 0.04,
+  74, 0.04,
+  92, 0.07
+  )
+
+BICARB_sample
+
+ggplot(data = BICARB_sample,
+       mapping = aes(x = ADY, y = AVAL)) +
+  geom_point(aes(colour = "THERAPY1"))
+```
+
