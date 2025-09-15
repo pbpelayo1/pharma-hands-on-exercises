@@ -1,8 +1,8 @@
 ---
 title: "Mini-project 12 - Testing"
-author: "Natalia Andriychuk"
+author: "Princess Pelayo"
 output: html_document
-date: "3/17/2023"
+date: "9/16/2025"
 ---
 
 `{testthat}` is a new package we will be using in this project. Please install before beginning this exercise.
@@ -146,28 +146,27 @@ calculate_Big_N_cnt <- function(adsl_data) {
 Now add some code to turn the lines of code below into the `calculate_small_n_cnt` function that takes in `adsl_data` argument. Remember to `return()` the `small_n_cnt.`
 
 ```{r}
-
+calculate_small_n_cnt <- function(adsl_data){
   small_n_cnt <-  adsl_data  %>%
   group_by( TRT01AN, TRT01A,  SEX ) %>%
   count(name = "n")
-  small_n_cnt
+  return(small_n_cnt)
+}
 
 ```
 
 And now let's transform the code below into the `adsl_counts`function. Remember, this function will take the output of the two functions above as arguments.
 
 ```{r}
- 
-
+adsl_counts <- function(Big_N_cnt, small_n_cnt){
   adsl_mrg_cnt <- small_n_cnt %>%
     left_join(Big_N_cnt, by = c("TRT01A", "TRT01AN")) %>%
     mutate(perc = round((n/N)*100, digits=1)) %>%
     ungroup() %>%
     select(TRT01A, SEX, perc) 
   
-  adsl_mrg_cnt
-
-
+  return(adsl_mrg_cnt)
+}
 
 ```
 
@@ -246,7 +245,7 @@ test_that("wrangle_data() output is correct", {
   
   expect_success(expect_equal(unique(adsl_data$SAFFL), "Y"))
   expect_success(expect_equal(sum(is.na(adsl_data$SAFFL)), 0))
-  expect_success(expect_length(names(adsl_data), 5))
+  expect_success(expect_length(names(adsl_data), 6))
 })
 ```
 
@@ -274,7 +273,7 @@ When running the code, we received a value of `3` which is what we would expect 
 
 ```{r}
 test_that("expected columns are all present in the wrangle_data() output", {
-  expect_equal( , )
+  expect_equal(sum(expected_vars %in% names(adsl_data)), 3)
 
 })
 ```
@@ -344,8 +343,8 @@ Let's not forget about the `calculate_small_n_cnt` function that we created earl
 
 ```{r}
 test_that("calculate_small_n_cnt() output has expected dim, columns, and types", {
-   expect_named( , )
-   expect_equal( , )
+  expect_named(calculate_small_n_cnt(test_data), c("TRT01AN", "TRT01A", "SEX", "n"))
+  expect_equal(dim(calculate_small_n_cnt(test_data)), c(length(unique(calculate_small_n_cnt(test_data)$TRT01A))*length(unique(calculate_small_n_cnt(test_data)$SEX)), 4))
 })
 
 ```
@@ -526,6 +525,23 @@ adsl_test_data
 
 ```{r}
 # TODO Create test cases for adsl_counts()
+
+test_that("adsl_counts() output has expected dim, columns, types, and values", {
+  adsl_test_data <-  test_data %>% 
+    adsl_counts(., Big_N_cnt, small_n_cnt)
+  
+  expect_named(adsl_test_data, c("TRT01A","SEX", "perc"))
+  expect_equal(dim(adsl_test_data), c(length(unique(adsl_test_data$TRT01A))*length(unique(adsl_test_data$SEX)), 3))
+  expect_type(adsl_test_data$perc, "double")
+
+  #test if calculated percent is correct
+  adsl_mrg_cnt <- small_n_cnt %>%
+    left_join(Big_N_cnt, by = c("TRT01A", "TRT01AN"))
+  adsl_mrg_cnt$perc = round(adsl_mrg_cnt$n / adsl_mrg_cnt$N * 100, digit=1)
+    
+  
+  expect_identical(adsl_test_data$perc, adsl_mrg_cnt$perc)
+})
 
 ```
 
